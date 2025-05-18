@@ -7,7 +7,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>${empty project.id ? 'Add New Project' : 'Edit Project'}</h1>
-        <a href="${pageContext.request.contextPath}/project?action=list" class="btn btn-secondary">
+        <a href="${pageContext.request.contextPath}/project" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i>Back to Projects
         </a>
     </div>
@@ -21,12 +21,14 @@
             </c:if>
             
             <c:if test="${sessionScope.user.role eq 'admin'}">
-                <form action="${pageContext.request.contextPath}/project" method="post" class="needs-validation" novalidate>
-                    <input type="hidden" name="action" value="${empty project.id ? 'create' : 'update'}">
-                    <c:if test="${not empty project.id}">
-                        <input type="hidden" name="id" value="${project.id}">
-                    </c:if>
-                    
+                <c:choose>
+                    <c:when test="${empty project.id}">
+                        <form action="${pageContext.request.contextPath}/project/create" method="POST" class="needs-validation" novalidate>
+                    </c:when>
+                    <c:otherwise>
+                        <form action="${pageContext.request.contextPath}/project/edit/${project.id}" method="POST" class="needs-validation" novalidate>
+                    </c:otherwise>
+                </c:choose>
                     <div class="mb-3">
                         <label for="name" class="form-label">Project Name <span class="text-danger">*</span></label>
                         <input type="text" 
@@ -81,7 +83,7 @@
                     </div>
                     
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="${pageContext.request.contextPath}/project?action=list" class="btn btn-light">Cancel</a>
+                        <a href="${pageContext.request.contextPath}/project" class="btn btn-light">Cancel</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save me-1"></i>${empty project.id ? 'Create Project' : 'Update Project'}
                         </button>

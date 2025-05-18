@@ -12,6 +12,12 @@
                     <h1 class="h4 mb-0 text-primary">Create New Project</h1>
                 </div>
                 <div class="card-body">
+                    <c:if test="${not empty errorMessage}">
+                        <div class="alert alert-danger" role="alert">
+                            ${errorMessage}
+                        </div>
+                    </c:if>
+                    
                     <form action="${pageContext.request.contextPath}/project/create" method="POST" class="needs-validation" novalidate>
                         <div class="mb-3">
                             <label for="name" class="form-label">Project Name</label>
@@ -48,7 +54,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="${pageContext.request.contextPath}/projects" class="btn btn-outline-secondary">
+                            <a href="${pageContext.request.contextPath}/project" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i> Back to Projects
                             </a>
                             <button type="submit" class="btn btn-primary">
@@ -66,28 +72,22 @@
 // Form validation
 (function () {
     'use strict'
+    
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
     var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms).forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            if (!form.checkValidity()) {
-                event.preventDefault()
-                event.stopPropagation()
-            }
-            form.classList.add('was-validated')
-        }, false)
-    })
-
-    // Date validation
-    var startDate = document.getElementById('startDate')
-    var endDate = document.getElementById('endDate')
-
-    startDate.addEventListener('change', function() {
-        endDate.min = startDate.value
-    })
-
-    endDate.addEventListener('change', function() {
-        startDate.max = endDate.value
-    })
+    
+    // Loop over them and prevent submission
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                
+                form.classList.add('was-validated')
+            }, false)
+        })
 })()
 </script>
 
