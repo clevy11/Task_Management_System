@@ -94,7 +94,7 @@ public class TaskServlet extends HttpServlet {
         
         // Get tasks based on user role and filters
         List<Task> tasks = new ArrayList<>();
-        if (currentUser.isAdmin()) {
+        if (currentUser.getRole().equalsIgnoreCase("admin")) {
             tasks = taskController.getAllTasks();
         } else {
             // Get tasks where user is either creator or assignee
@@ -143,7 +143,7 @@ public class TaskServlet extends HttpServlet {
                 Task task = taskController.getTaskById(taskId);
                 
                 if (task != null) {
-                    boolean canView = currentUser.isAdmin() || 
+                    boolean canView = currentUser.getRole().equalsIgnoreCase("admin") || 
                                     task.getCreatedBy() == currentUser.getId() || 
                                     task.getAssignedTo() == currentUser.getId();
                     
@@ -170,7 +170,7 @@ public class TaskServlet extends HttpServlet {
                 Task task = taskController.getTaskById(taskId);
                 
                 if (task != null) {
-                    boolean canEdit = currentUser.isAdmin() || 
+                    boolean canEdit = currentUser.getRole().equalsIgnoreCase("admin") || 
                                     task.getCreatedBy() == currentUser.getId() || 
                                     task.getAssignedTo() == currentUser.getId();
                     
@@ -196,7 +196,7 @@ public class TaskServlet extends HttpServlet {
                 Task task = taskController.getTaskById(taskId);
                 
                 if (task != null) {
-                    boolean canUpdateStatus = currentUser.isAdmin() || 
+                    boolean canUpdateStatus = currentUser.getRole().equalsIgnoreCase("admin") || 
                                            task.getCreatedBy() == currentUser.getId() || 
                                            task.getAssignedTo() == currentUser.getId();
                     
@@ -302,7 +302,7 @@ public class TaskServlet extends HttpServlet {
                 Task existingTask = taskController.getTaskById(taskId);
                 
                 if (existingTask != null) {
-                    boolean canEdit = currentUser.isAdmin() || 
+                    boolean canEdit = currentUser.getRole().equalsIgnoreCase("admin") || 
                                     existingTask.getCreatedBy() == currentUser.getId() || 
                                     existingTask.getAssignedTo() == currentUser.getId();
                     
@@ -351,22 +351,30 @@ public class TaskServlet extends HttpServlet {
                 Task task = taskController.getTaskById(taskId);
                 
                 if (task != null) {
-                    boolean canUpdateStatus = currentUser.isAdmin() || 
+                    boolean canUpdateStatus = currentUser.getRole().equalsIgnoreCase("admin") || 
                                            task.getCreatedBy() == currentUser.getId() || 
                                            task.getAssignedTo() == currentUser.getId();
                     
                     if (canUpdateStatus) {
                         String newStatus = request.getParameter("status");
-                        boolean success = taskController.updateTaskStatus(taskId, newStatus, currentUser.getId());
+                        Map<String, String> errors = taskController.updateTaskStatus(taskId, newStatus, currentUser.getId());
                         
-                        if (success) {
+                        if (errors.isEmpty()) {
                             response.sendRedirect(request.getContextPath() + "/task/view/" + taskId + "?success=status");
+                            return;
+                        } else {
+                            request.setAttribute("errors", errors);
+                            request.setAttribute("task", task);
+                            request.getRequestDispatcher("/WEB-INF/views/task/status.jsp").forward(request, response);
                             return;
                         }
                     }
                 }
             } catch (Exception e) {
-                // Invalid task ID or status
+                e.printStackTrace();
+                request.setAttribute("errorMessage", "Error updating task status: " + e.getMessage());
+                request.getRequestDispatcher("/WEB-INF/views/error.jsp").forward(request, response);
+                return;
             }
         }
         response.sendRedirect(request.getContextPath() + "/tasks?error=status");
@@ -380,7 +388,7 @@ public class TaskServlet extends HttpServlet {
                 Task task = taskController.getTaskById(taskId);
                 
                 if (task != null) {
-                    boolean canDelete = currentUser.isAdmin() || task.getCreatedBy() == currentUser.getId();
+                    boolean canDelete = currentUser.getRole().equalsIgnoreCase("admin") || task.getCreatedBy() == currentUser.getId();
                     
                     if (canDelete) {
                         boolean success = taskController.deleteTask(taskId);

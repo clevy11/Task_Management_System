@@ -51,10 +51,9 @@
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select ${not empty statusError ? 'is-invalid' : ''}" 
                                     id="status" name="status" required>
-                                <option value="TODO" ${task.status == 'TODO' ? 'selected' : ''}>To Do</option>
-                                <option value="IN_PROGRESS" ${task.status == 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
-                                <option value="REVIEW" ${task.status == 'REVIEW' ? 'selected' : ''}>Review</option>
-                                <option value="DONE" ${task.status == 'DONE' ? 'selected' : ''}>Done</option>
+                                <option value="Pending" ${task.status == 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="In Progress" ${task.status == 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Completed" ${task.status == 'Completed' ? 'selected' : ''}>Completed</option>
                             </select>
                             <c:if test="${not empty statusError}">
                                 <div class="invalid-feedback">${statusError}</div>

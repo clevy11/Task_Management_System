@@ -21,7 +21,7 @@ public class AuthFilter implements Filter {
     
     // List of paths that require admin role
     private static final List<String> ADMIN_PATHS = Arrays.asList(
-            "/admin", "/users", "/project/create"
+            "/admin", "/users", "/project/create", "/project/edit", "/project/delete"
     );
     
     @Override
@@ -37,9 +37,14 @@ public class AuthFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         
         String path = httpRequest.getServletPath();
+        String pathInfo = httpRequest.getPathInfo();
+        
+        // For debugging
+        System.out.println("AuthFilter: Processing request for path: " + path + (pathInfo != null ? pathInfo : ""));
         
         // Check if the requested path is public
         if (isPublicPath(path)) {
+            System.out.println("AuthFilter: Path is public, allowing access");
             chain.doFilter(request, response);
             return;
         }
@@ -47,17 +52,22 @@ public class AuthFilter implements Filter {
         // Check if user is authenticated
         HttpSession session = httpRequest.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
+            System.out.println("AuthFilter: User not authenticated, redirecting to login");
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth?action=showLogin");
             return;
         }
         
+        User user = (User) session.getAttribute("user");
+        System.out.println("AuthFilter: User authenticated as: " + user.getEmail() + ", Role: " + user.getRole());
+        
         // Check if the path requires admin role
         if (isAdminPath(path)) {
-            User user = (User) session.getAttribute("user");
-            if (!user.isAdmin()) {
+            if (!"admin".equalsIgnoreCase(user.getRole())) {
+                System.out.println("AuthFilter: User is not admin, access denied");
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/dashboard?error=unauthorized");
                 return;
             }
+            System.out.println("AuthFilter: Admin access granted");
         }
         
         // Continue with the request
@@ -74,6 +84,10 @@ public class AuthFilter implements Filter {
     }
     
     private boolean isAdminPath(String path) {
+        if (path.startsWith("/project") && !path.equals("/project")) {
+            // All project paths except the main listing are admin-only
+            return true;
+        }
         return ADMIN_PATHS.stream().anyMatch(path::startsWith);
     }
 }

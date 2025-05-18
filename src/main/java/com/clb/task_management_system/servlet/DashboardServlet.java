@@ -44,44 +44,49 @@ public class DashboardServlet extends HttpServlet {
             return;
         }
         
-        // Get tasks assigned to current user
-        List<Task> assignedTasks = taskController.getTasksByAssignee(currentUser.getId());
-        request.setAttribute("assignedTasks", assignedTasks);
-        
-        // Get tasks created by current user
-        List<Task> createdTasks = taskController.getTasksByCreator(currentUser.getId());
-        request.setAttribute("createdTasks", createdTasks);
-        
-        // Calculate task statistics
-        Map<String, Integer> taskStats = calculateTaskStats(assignedTasks);
-        request.setAttribute("taskStats", taskStats);
-        
-        // If user is admin, get all projects
-        if ("admin".equalsIgnoreCase(currentUser.getRole())) {
-            List<Project> projects = projectController.getAllProjects();
-            request.setAttribute("projects", projects);
-        }
-        
-        // Handle project filter if specified
-        String projectId = request.getParameter("project");
-        if (projectId != null && !projectId.isEmpty()) {
-            try {
-                int pid = Integer.parseInt(projectId);
-                if (assignedTasks != null) {
-                    assignedTasks.removeIf(task -> task.getProjectId() != pid);
-                    request.setAttribute("assignedTasks", assignedTasks);
-                }
-                if (createdTasks != null) {
-                    createdTasks.removeIf(task -> task.getProjectId() != pid);
-                    request.setAttribute("createdTasks", createdTasks);
-                }
-                request.setAttribute("projectFilter", pid);
-            } catch (NumberFormatException e) {
-                // Invalid project ID, ignore filter
+        try {
+            // Get tasks assigned to current user
+            List<Task> assignedTasks = taskController.getTasksByAssignee(currentUser.getId());
+            request.setAttribute("assignedTasks", assignedTasks);
+            
+            // Get tasks created by current user
+            List<Task> createdTasks = taskController.getTasksByCreator(currentUser.getId());
+            request.setAttribute("createdTasks", createdTasks);
+            
+            // Calculate task statistics
+            Map<String, Integer> taskStats = calculateTaskStats(assignedTasks);
+            request.setAttribute("taskStats", taskStats);
+            
+            // If user is admin, get all projects
+            if ("admin".equalsIgnoreCase(currentUser.getRole())) {
+                List<Project> projects = projectController.getAllProjects();
+                request.setAttribute("projects", projects);
             }
+            
+            // Handle project filter if specified
+            String projectId = request.getParameter("project");
+            if (projectId != null && !projectId.isEmpty()) {
+                try {
+                    int pid = Integer.parseInt(projectId);
+                    if (assignedTasks != null) {
+                        assignedTasks.removeIf(task -> task.getProjectId() != pid);
+                        request.setAttribute("assignedTasks", assignedTasks);
+                    }
+                    if (createdTasks != null) {
+                        createdTasks.removeIf(task -> task.getProjectId() != pid);
+                        request.setAttribute("createdTasks", createdTasks);
+                    }
+                    request.setAttribute("projectFilter", pid);
+                } catch (NumberFormatException e) {
+                    // Invalid project ID, ignore filter
+                }
+            }
+            
+            request.getRequestDispatcher("/WEB-INF/views/dashboard.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An error occurred while loading the dashboard: " + e.getMessage());
         }
-        
-        request.getRequestDispatcher("/WEB-INF/views/dashboard.jsp").forward(request, response);
     }
     
     @Override
@@ -119,13 +124,13 @@ public class DashboardServlet extends HttpServlet {
             totalTasks = tasks.size();
             for (Task task : tasks) {
                 switch (task.getStatus()) {
-                    case TaskController.STATUS_TODO:
+                    case "Pending":
                         todoTasks++;
                         break;
-                    case TaskController.STATUS_IN_PROGRESS:
+                    case "In Progress":
                         inProgressTasks++;
                         break;
-                    case TaskController.STATUS_DONE:
+                    case "Completed":
                         completedTasks++;
                         break;
                 }
