@@ -39,8 +39,8 @@ A comprehensive web-based task management application built using Java Servlets,
 - Recent activity feed
 
 ## Entity Relationship Diagram
+![Screenshot 2025-05-16 220901.png](Screenshot%202025-05-16%20220901.png)
 
-![Screenshot 2025-05-16 220901.png](../../Pictures/Screenshots/Screenshot%202025-05-16%20220901.png)
 ## Technologies Used
 
 ### Backend
