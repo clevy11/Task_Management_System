@@ -98,10 +98,15 @@
                                         <i class="bi bi-circle-fill"></i>
                                     </div>
                                     <div class="timeline-content">
-                                        <p class="mb-0">${log.description}</p>
+                                        <p class="mb-0">
+                                            Status changed from 
+                                            <span class="badge bg-secondary">${empty log.oldStatus ? 'New' : log.oldStatus}</span> 
+                                            to 
+                                            <span class="badge bg-primary">${log.newStatus}</span>
+                                        </p>
                                         <small class="text-muted">
-                                            <fmt:formatDate value="${log.createdAt}" pattern="MMM d, yyyy HH:mm" />
-                                            by ${log.user.fullName}
+                                            <fmt:formatDate value="${log.changedAt}" pattern="MMM d, yyyy HH:mm" />
+                                            by ${log.changer.firstName} ${log.changer.lastName}
                                         </small>
                                     </div>
                                 </div>
