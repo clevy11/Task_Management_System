@@ -1,0 +1,180 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
+<jsp:include page="common/header.jsp" />
+
+<!-- Modern Dashboard with Bootstrap 5 styling -->
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-primary text-white p-4 rounded shadow">
+                <h1 class="display-5 fw-bold">Dashboard</h1>
+                <p class="lead">Welcome back, ${sessionScope.user.firstName}!</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-4 text-primary mb-2">${taskStats.totalTasks}</div>
+                    <h5 class="card-title text-muted">Total Tasks</h5>
+                    <p class="card-text small text-muted">All tasks</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-4 text-warning mb-2">${taskStats.todoTasks}</div>
+                    <h5 class="card-title text-muted">To Do</h5>
+                    <p class="card-text small text-muted">Tasks to be started</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-2">${taskStats.inProgressTasks}</div>
+                    <h5 class="card-title text-muted">In Progress</h5>
+                    <p class="card-text small text-muted">Tasks being worked on</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">${taskStats.completedTasks}</div>
+                    <h5 class="card-title text-muted">Completed</h5>
+                    <p class="card-text small text-muted">Finished tasks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tasks Sections -->
+    <div class="row">
+        <!-- Assigned Tasks -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h2 class="h5 mb-0 text-primary">Tasks Assigned to Me</h2>
+                    <a href="${pageContext.request.contextPath}/tasks?filter=assigned" class="btn btn-outline-primary btn-sm">View All</a>
+                </div>
+                <div class="card-body">
+                    <c:if test="${empty assignedTasks}">
+                        <p class="text-center text-muted my-4">No tasks assigned to you.</p>
+                    </c:if>
+                    <c:if test="${not empty assignedTasks}">
+                        <div class="list-group list-group-flush">
+                            <c:forEach items="${assignedTasks}" var="task">
+                                <a href="${pageContext.request.contextPath}/task/view/${task.id}" 
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${task.title}</h6>
+                                        <small class="text-muted">
+                                            Due: <fmt:formatDate value="${task.dueDate}" pattern="MMM dd, yyyy"/>
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-${task.status == 'Pending' ? 'secondary' : task.status == 'In Progress' ? 'primary' : 'success'} rounded-pill">
+                                        ${task.status}
+                                    </span>
+                                </a>
+                            </c:forEach>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Created Tasks -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h2 class="h5 mb-0 text-primary">Tasks Created by Me</h2>
+                    <a href="${pageContext.request.contextPath}/tasks?filter=created" class="btn btn-outline-primary btn-sm">View All</a>
+                </div>
+                <div class="card-body">
+                    <c:if test="${empty createdTasks}">
+                        <p class="text-center text-muted my-4">You haven't created any tasks yet.</p>
+                    </c:if>
+                    <c:if test="${not empty createdTasks}">
+                        <div class="list-group list-group-flush">
+                            <c:forEach items="${createdTasks}" var="task">
+                                <a href="${pageContext.request.contextPath}/task/view/${task.id}" 
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${task.title}</h6>
+                                        <small class="text-muted">
+                                            Assigned to: ${task.assignee.firstName} ${task.assignee.lastName}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-${task.status == 'Pending' ? 'secondary' : task.status == 'In Progress' ? 'primary' : 'success'} rounded-pill">
+                                        ${task.status}
+                                    </span>
+                                </a>
+                            </c:forEach>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Projects Section (for admins) -->
+    <c:if test="${'admin' eq sessionScope.user.role}">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h2 class="h5 mb-0 text-primary">Projects Overview</h2>
+                <a href="${pageContext.request.contextPath}/project/create" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> New Project
+                </a>
+            </div>
+            <div class="card-body">
+                <c:if test="${empty projects}">
+                    <p class="text-center text-muted my-4">No projects found.</p>
+                </c:if>
+                <c:if test="${not empty projects}">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Tasks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach items="${projects}" var="project">
+                                    <tr>
+                                        <td>
+                                            <h6 class="mb-0">${project.name}</h6>
+                                            <small class="text-muted">${project.description}</small>
+                                        </td>
+                                        <td>${project.taskCount}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="${pageContext.request.contextPath}/project/view/${project.id}" 
+                                                   class="btn btn-outline-primary">View</a>
+                                                <a href="${pageContext.request.contextPath}/project/edit/${project.id}" 
+                                                   class="btn btn-outline-secondary">Edit</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </c:if>
+            </div>
+        </div>
+    </c:if>
+</div>
+
+<jsp:include page="common/footer.jsp" />

@@ -1,6 +1,7 @@
 package com.clb.task_management_system.model;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 
 public class Project {
     private int id;
@@ -10,6 +11,8 @@ public class Project {
     private Date endDate;
     private int createdBy;
     private User creator;
+    private Timestamp createdAt;
+    private int taskCount;
 
     public Project() {
     }
@@ -77,5 +80,21 @@ public class Project {
 
     public void setCreator(User creator) {
         this.creator = creator;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public int getTaskCount() {
+        return taskCount;
+    }
+
+    public void setTaskCount(int taskCount) {
+        this.taskCount = taskCount;
     }
 }

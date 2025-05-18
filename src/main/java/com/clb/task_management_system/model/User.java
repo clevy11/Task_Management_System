@@ -90,7 +90,7 @@ public class User implements Serializable {
      * @return true if the user has the admin role, false otherwise
      */
     public boolean isAdmin() {
-        return "admin".equalsIgnoreCase(role);
+        return role != null && "admin".equalsIgnoreCase(role);
     }
     
     @Override
