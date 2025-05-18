@@ -53,9 +53,9 @@
                                 <i class="bi bi-list-check me-1"></i> Tasks
                             </a>
                         </li>
-                        <c:if test="${sessionScope.user.isAdmin()}">
+                        <c:if test="${sessionScope.user.role eq 'ADMIN'}">
                             <li class="nav-item">
-                                <a class="nav-link" href="${pageContext.request.contextPath}/projects">
+                                <a class="nav-link" href="${pageContext.request.contextPath}/project">
                                     <i class="bi bi-folder me-1"></i> Projects
                                 </a>
                             </li>
@@ -64,7 +64,7 @@
                     
                     <div class="d-flex align-items-center">
                         <span class="me-3">Welcome, ${sessionScope.user.firstName}</span>
-                        <a href="${pageContext.request.contextPath}/auth/logout" class="btn btn-outline-danger btn-sm">
+                        <a href="${pageContext.request.contextPath}/auth?action=logout" class="btn btn-outline-danger btn-sm">
                             <i class="bi bi-box-arrow-right me-1"></i> Logout
                         </a>
                     </div>
@@ -74,14 +74,16 @@
     </nav>
 
     <main class="py-4">
-        <c:if test="${not empty requestScope.successMessage}">
+        <c:if test="${not empty sessionScope.successMessage}">
             <div class="alert alert-success mt-3">
-                ${requestScope.successMessage}
+                ${sessionScope.successMessage}
+                <c:remove var="successMessage" scope="session" />
             </div>
         </c:if>
         
-        <c:if test="${not empty requestScope.errorMessage}">
+        <c:if test="${not empty sessionScope.errorMessage}">
             <div class="alert alert-danger mt-3">
-                ${requestScope.errorMessage}
+                ${sessionScope.errorMessage}
+                <c:remove var="errorMessage" scope="session" />
             </div>
         </c:if>

@@ -14,7 +14,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Servlet for handling dashboard operations.
@@ -38,7 +40,6 @@ public class DashboardServlet extends HttpServlet {
         User currentUser = (User) session.getAttribute("user");
         
         if (currentUser == null) {
-            // User not logged in, redirect to login page
             response.sendRedirect(request.getContextPath() + "/auth?action=showLogin");
             return;
         }
@@ -47,37 +48,34 @@ public class DashboardServlet extends HttpServlet {
         List<Task> assignedTasks = taskController.getTasksByAssignee(currentUser.getId());
         request.setAttribute("assignedTasks", assignedTasks);
         
-        // Get all projects
-        List<Project> projects = projectController.getAllProjects();
-        request.setAttribute("projects", projects);
+        // Get tasks created by current user
+        List<Task> createdTasks = taskController.getTasksByCreator(currentUser.getId());
+        request.setAttribute("createdTasks", createdTasks);
         
-        // Get filter parameters
-        String statusFilter = request.getParameter("status");
-        String projectFilter = request.getParameter("project");
+        // Calculate task statistics
+        Map<String, Integer> taskStats = calculateTaskStats(assignedTasks);
+        request.setAttribute("taskStats", taskStats);
         
-        // Apply filters if provided
-        if (statusFilter != null && !statusFilter.isEmpty()) {
-            // Filter by status - we need to filter the already fetched tasks
-            // since we don't have a direct controller method for this
-            if (assignedTasks != null) {
-                assignedTasks.removeIf(task -> !task.getStatus().equals(statusFilter));
-                request.setAttribute("assignedTasks", assignedTasks);
-            }
-            request.setAttribute("statusFilter", statusFilter);
+        // If user is admin, get all projects
+        if ("admin".equalsIgnoreCase(currentUser.getRole())) {
+            List<Project> projects = projectController.getAllProjects();
+            request.setAttribute("projects", projects);
         }
         
-        if (projectFilter != null && !projectFilter.isEmpty()) {
+        // Handle project filter if specified
+        String projectId = request.getParameter("project");
+        if (projectId != null && !projectId.isEmpty()) {
             try {
-                int projectId = Integer.parseInt(projectFilter);
-                List<Task> projectTasks = taskController.getTasksByProject(projectId);
-                
-                // If we're also filtering by status, we need to apply that filter too
-                if (statusFilter != null && !statusFilter.isEmpty() && projectTasks != null) {
-                    projectTasks.removeIf(task -> !task.getStatus().equals(statusFilter));
+                int pid = Integer.parseInt(projectId);
+                if (assignedTasks != null) {
+                    assignedTasks.removeIf(task -> task.getProjectId() != pid);
+                    request.setAttribute("assignedTasks", assignedTasks);
                 }
-                
-                request.setAttribute("assignedTasks", projectTasks);
-                request.setAttribute("projectFilter", projectId);
+                if (createdTasks != null) {
+                    createdTasks.removeIf(task -> task.getProjectId() != pid);
+                    request.setAttribute("createdTasks", createdTasks);
+                }
+                request.setAttribute("projectFilter", pid);
             } catch (NumberFormatException e) {
                 // Invalid project ID, ignore filter
             }
@@ -99,38 +97,46 @@ public class DashboardServlet extends HttpServlet {
         User currentUser = (User) session.getAttribute("user");
         
         if (currentUser == null) {
-            // User not logged in, redirect to login page
             response.sendRedirect(request.getContextPath() + "/auth?action=showLogin");
             return;
         }
         
-        switch (action) {
-            case "updateTaskStatus":
-                updateTaskStatus(request, response, currentUser);
-                break;
-            default:
-                response.sendRedirect(request.getContextPath() + "/dashboard");
-        }
+        // Handle post actions here
+        response.sendRedirect(request.getContextPath() + "/dashboard");
     }
     
-    private void updateTaskStatus(HttpServletRequest request, HttpServletResponse response, User currentUser) throws IOException {
-        try {
-            int taskId = Integer.parseInt(request.getParameter("taskId"));
-            String newStatus = request.getParameter("newStatus");
-            
-            if (newStatus != null && !newStatus.isEmpty()) {
-                boolean success = taskController.updateTaskStatus(taskId, newStatus, currentUser.getId());
-                
-                if (success) {
-                    request.getSession().setAttribute("successMessage", "Task status updated successfully");
-                } else {
-                    request.getSession().setAttribute("errorMessage", "Failed to update task status");
+    /**
+     * Calculate task statistics for the dashboard.
+     */
+    private Map<String, Integer> calculateTaskStats(List<Task> tasks) {
+        Map<String, Integer> stats = new HashMap<>();
+        int totalTasks = 0;
+        int todoTasks = 0;
+        int inProgressTasks = 0;
+        int completedTasks = 0;
+        
+        if (tasks != null) {
+            totalTasks = tasks.size();
+            for (Task task : tasks) {
+                switch (task.getStatus()) {
+                    case TaskController.STATUS_TODO:
+                        todoTasks++;
+                        break;
+                    case TaskController.STATUS_IN_PROGRESS:
+                        inProgressTasks++;
+                        break;
+                    case TaskController.STATUS_DONE:
+                        completedTasks++;
+                        break;
                 }
             }
-        } catch (NumberFormatException e) {
-            request.getSession().setAttribute("errorMessage", "Invalid task ID");
         }
         
-        response.sendRedirect(request.getContextPath() + "/dashboard");
+        stats.put("totalTasks", totalTasks);
+        stats.put("todoTasks", todoTasks);
+        stats.put("inProgressTasks", inProgressTasks);
+        stats.put("completedTasks", completedTasks);
+        
+        return stats;
     }
 }

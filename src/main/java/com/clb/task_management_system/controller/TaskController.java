@@ -18,6 +18,13 @@ import java.util.Map;
  * Acts as an intermediary between the View (Servlets/JSP) and the Model (DAO/Model classes).
  */
 public class TaskController {
+    /**
+     * Valid task statuses
+     */
+    public static final String STATUS_TODO = "Pending";
+    public static final String STATUS_IN_PROGRESS = "In Progress";
+    public static final String STATUS_DONE = "Completed";
+    
     private TaskDAO taskDAO;
     private TaskLogDAO taskLogDAO;
     
@@ -42,7 +49,7 @@ public class TaskController {
             task.setTitle(title);
             task.setDescription(description);
             task.setDueDate(dueDate);
-            task.setStatus("TODO"); // Default status aligned with UI
+            task.setStatus(STATUS_TODO); // Default status aligned with database ENUM
             task.setAssignedTo(assignedTo);
             task.setProjectId(projectId != null ? projectId : 0);
             task.setCreatedBy(createdBy);
@@ -58,9 +65,8 @@ public class TaskController {
                 // Create initial task log
                 TaskLog log = new TaskLog();
                 log.setTaskId(taskId);
-                log.setDescription("Task created by " + createdBy);
                 log.setOldStatus(null);
-                log.setNewStatus("TODO");
+                log.setNewStatus(STATUS_TODO);
                 log.setChangedAt(now);
                 log.setChangedBy(createdBy);
                 
@@ -171,13 +177,24 @@ public class TaskController {
         }
         
         try {
-            // Get the current task to check for status changes
+            // Get the current task to check for status change
             Task currentTask = taskDAO.getTaskById(task.getId());
-            String oldStatus = currentTask != null ? currentTask.getStatus() : null;
-            String newStatus = task.getStatus();
+            if (currentTask == null) {
+                errors.put("general", "Task not found");
+                return errors;
+            }
+            
+            // Validate status
+            String status = task.getStatus();
+            if (!isValidStatus(status)) {
+                errors.put("status", "Invalid status value");
+                return errors;
+            }
+            
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            task.setUpdatedAt(now);
             
             // Update the task
-            task.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
             boolean success = taskDAO.updateTask(task);
             
             if (!success) {
@@ -185,24 +202,23 @@ public class TaskController {
                 return errors;
             }
             
-            // Log status change if status has changed
-            if (oldStatus != null && newStatus != null && !oldStatus.equals(newStatus)) {
+            // Create task log if status changed
+            if (!currentTask.getStatus().equals(task.getStatus())) {
                 TaskLog log = new TaskLog();
                 log.setTaskId(task.getId());
-                log.setDescription("Status changed from " + oldStatus + " to " + newStatus);
-                log.setOldStatus(oldStatus);
-                log.setNewStatus(newStatus);
-                log.setChangedAt(new Timestamp(System.currentTimeMillis()));
+                log.setOldStatus(currentTask.getStatus());
+                log.setNewStatus(task.getStatus());
+                log.setChangedAt(now);
                 log.setChangedBy(changedBy);
                 
                 boolean logSuccess = taskLogDAO.createTaskLog(log);
                 if (!logSuccess) {
-                    errors.put("general", "Task updated but failed to log status change");
+                    errors.put("warning", "Task updated but failed to create status change log");
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            errors.put("general", "An error occurred during task update: " + e.getMessage());
+            errors.put("general", "An error occurred while updating the task: " + e.getMessage());
         }
         
         return errors;
@@ -211,11 +227,20 @@ public class TaskController {
     /**
      * Updates a task's status.
      */
-    public boolean updateTaskStatus(int taskId, String newStatus, int changedBy) {
+    public Map<String, String> updateTaskStatus(int taskId, String newStatus, int changedBy) {
+        Map<String, String> errors = new HashMap<>();
+        
+        // Validate status
+        if (!isValidStatus(newStatus)) {
+            errors.put("status", "Invalid status value");
+            return errors;
+        }
+        
         try {
             Task task = taskDAO.getTaskById(taskId);
             if (task == null) {
-                return false;
+                errors.put("general", "Task not found");
+                return errors;
             }
             
             String oldStatus = task.getStatus();
@@ -225,22 +250,27 @@ public class TaskController {
             boolean success = taskDAO.updateTask(task);
             
             if (success) {
+                // Create task log
                 TaskLog log = new TaskLog();
                 log.setTaskId(taskId);
-                log.setDescription("Status changed from " + oldStatus + " to " + newStatus);
                 log.setOldStatus(oldStatus);
                 log.setNewStatus(newStatus);
                 log.setChangedAt(new Timestamp(System.currentTimeMillis()));
                 log.setChangedBy(changedBy);
                 
-                taskLogDAO.createTaskLog(log);
+                boolean logSuccess = taskLogDAO.createTaskLog(log);
+                if (!logSuccess) {
+                    errors.put("warning", "Status updated but failed to create status change log");
+                }
+            } else {
+                errors.put("general", "Failed to update task status");
             }
-            
-            return success;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            errors.put("general", "An error occurred while updating the task status: " + e.getMessage());
         }
+        
+        return errors;
     }
     
     /**
@@ -256,39 +286,47 @@ public class TaskController {
     }
     
     /**
-     * Gets task logs for a specific task.
+     * Gets all logs for a specific task.
      */
     public List<TaskLog> getTaskLogs(int taskId) {
         try {
-            return taskLogDAO.getTaskLogs(taskId);
+            return taskLogDAO.getLogsByTaskId(taskId);
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
     
+    /**
+     * Validates task input data.
+     */
     private Map<String, String> validateTaskInput(String title, String description, Date dueDate) {
         Map<String, String> errors = new HashMap<>();
         
+        // Validate title
         if (title == null || title.trim().isEmpty()) {
-            errors.put("title", "Title is required");
-        } else if (title.length() > 100) {
-            errors.put("title", "Title cannot exceed 100 characters");
+            errors.put("title", "Task title is required");
+        } else if (title.length() < 2 || title.length() > 100) {
+            errors.put("title", "Task title must be between 2 and 100 characters");
         }
         
-        if (description == null || description.trim().isEmpty()) {
-            errors.put("description", "Description is required");
+        // Validate description length if provided
+        if (description != null && description.length() > 500) {
+            errors.put("description", "Task description cannot exceed 500 characters");
         }
         
+        // Validate due date
         if (dueDate == null) {
             errors.put("dueDate", "Due date is required");
-        } else {
-            long currentTime = System.currentTimeMillis();
-            if (dueDate.getTime() < currentTime) {
-                errors.put("dueDate", "Due date cannot be in the past");
-            }
         }
         
         return errors;
+    }
+    
+    /**
+     * Checks if the provided status is valid.
+     */
+    private boolean isValidStatus(String status) {
+        return STATUS_TODO.equals(status) || STATUS_IN_PROGRESS.equals(status) || STATUS_DONE.equals(status);
     }
 }

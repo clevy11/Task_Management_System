@@ -22,7 +22,7 @@
                 <div class="card-body text-center">
                     <div class="display-4 text-primary mb-2">${taskStats.totalTasks}</div>
                     <h5 class="card-title text-muted">Total Tasks</h5>
-                    <p class="card-text small text-muted">All assigned tasks</p>
+                    <p class="card-text small text-muted">All tasks</p>
                 </div>
             </div>
         </div>
@@ -30,9 +30,9 @@
         <div class="col-md-3 mb-3">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
-                    <div class="display-4 text-warning mb-2">${taskStats.pendingTasks}</div>
-                    <h5 class="card-title text-muted">Pending Tasks</h5>
-                    <p class="card-text small text-muted">Tasks waiting to be started</p>
+                    <div class="display-4 text-warning mb-2">${taskStats.todoTasks}</div>
+                    <h5 class="card-title text-muted">To Do</h5>
+                    <p class="card-text small text-muted">Tasks to be started</p>
                 </div>
             </div>
         </div>
@@ -42,7 +42,7 @@
                 <div class="card-body text-center">
                     <div class="display-4 text-info mb-2">${taskStats.inProgressTasks}</div>
                     <h5 class="card-title text-muted">In Progress</h5>
-                    <p class="card-text small text-muted">Tasks currently in progress</p>
+                    <p class="card-text small text-muted">Tasks being worked on</p>
                 </div>
             </div>
         </div>
@@ -52,136 +52,137 @@
                 <div class="card-body text-center">
                     <div class="display-4 text-success mb-2">${taskStats.completedTasks}</div>
                     <h5 class="card-title text-muted">Completed</h5>
-                    <p class="card-text small text-muted">Successfully completed tasks</p>
+                    <p class="card-text small text-muted">Finished tasks</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Recent Tasks -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-            <h2 class="h5 mb-0 text-primary">Recent Tasks</h2>
-            <a href="${pageContext.request.contextPath}/task/create" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle me-1"></i> Add New Task
-            </a>
-        </div>
-        <div class="card-body">
-            <c:if test="${empty recentTasks}">
-                <div class="text-center py-5">
-                    <i class="bi bi-clipboard-x display-4 text-muted mb-3"></i>
-                    <p class="text-muted">No tasks found. Start by creating a new task.</p>
+    <!-- Tasks Sections -->
+    <div class="row">
+        <!-- Assigned Tasks -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h2 class="h5 mb-0 text-primary">Tasks Assigned to Me</h2>
+                    <a href="${pageContext.request.contextPath}/tasks?filter=assigned" class="btn btn-outline-primary btn-sm">View All</a>
                 </div>
-            </c:if>
-            
-            <c:if test="${not empty recentTasks}">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Title</th>
-                                <th>Project</th>
-                                <th>Status</th>
-                                <th>Due Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <c:forEach var="task" items="${recentTasks}">
-                                <tr>
-                                    <td class="align-middle fw-medium">${task.title}</td>
-                                    <td class="align-middle">${task.project.name}</td>
-                                    <td class="align-middle">
-                                        <c:choose>
-                                            <c:when test="${task.status == 'PENDING'}">
-                                                <span class="badge bg-warning text-dark">Pending</span>
-                                            </c:when>
-                                            <c:when test="${task.status == 'IN_PROGRESS'}">
-                                                <span class="badge bg-info">In Progress</span>
-                                            </c:when>
-                                            <c:when test="${task.status == 'COMPLETED'}">
-                                                <span class="badge bg-success">Completed</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="badge bg-secondary">${task.status}</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td class="align-middle">
-                                        <fmt:formatDate value="${task.dueDate}" pattern="MMM dd, yyyy" />
-                                    </td>
-                                    <td class="align-middle">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="${pageContext.request.contextPath}/task/view/${task.id}" class="btn btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a href="${pageContext.request.contextPath}/task/edit/${task.id}" class="btn btn-outline-secondary">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
+                <div class="card-body">
+                    <c:if test="${empty assignedTasks}">
+                        <p class="text-center text-muted my-4">No tasks assigned to you.</p>
+                    </c:if>
+                    <c:if test="${not empty assignedTasks}">
+                        <div class="list-group list-group-flush">
+                            <c:forEach items="${assignedTasks}" var="task">
+                                <a href="${pageContext.request.contextPath}/task/view/${task.id}" 
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${task.title}</h6>
+                                        <small class="text-muted">
+                                            Due: <fmt:formatDate value="${task.dueDate}" pattern="MMM dd, yyyy"/>
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-${task.status == 'TODO' ? 'secondary' : task.status == 'IN_PROGRESS' ? 'primary' : 'success'} rounded-pill">
+                                        ${task.status}
+                                    </span>
+                                </a>
                             </c:forEach>
-                        </tbody>
-                    </table>
+                        </div>
+                    </c:if>
                 </div>
-            </c:if>
+            </div>
         </div>
-        <div class="card-footer bg-white border-top-0 text-end">
-            <a href="${pageContext.request.contextPath}/tasks" class="btn btn-outline-primary btn-sm">
-                View All Tasks
-            </a>
+        
+        <!-- Created Tasks -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h2 class="h5 mb-0 text-primary">Tasks Created by Me</h2>
+                    <a href="${pageContext.request.contextPath}/tasks?filter=created" class="btn btn-outline-primary btn-sm">View All</a>
+                </div>
+                <div class="card-body">
+                    <c:if test="${empty createdTasks}">
+                        <p class="text-center text-muted my-4">You haven't created any tasks yet.</p>
+                    </c:if>
+                    <c:if test="${not empty createdTasks}">
+                        <div class="list-group list-group-flush">
+                            <c:forEach items="${createdTasks}" var="task">
+                                <a href="${pageContext.request.contextPath}/task/view/${task.id}" 
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${task.title}</h6>
+                                        <small class="text-muted">
+                                            Assigned to: ${task.assignee.firstName} ${task.assignee.lastName}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-${task.status == 'TODO' ? 'secondary' : task.status == 'IN_PROGRESS' ? 'primary' : 'success'} rounded-pill">
+                                        ${task.status}
+                                    </span>
+                                </a>
+                            </c:forEach>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
         </div>
     </div>
     
-    <c:if test="${sessionScope.user.isAdmin()}">
+    <!-- Projects Section (for admins) -->
+    <c:if test="${sessionScope.user.role == 'ADMIN'}">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                <h2 class="h5 mb-0 text-primary">Projects</h2>
+                <h2 class="h5 mb-0 text-primary">Projects Overview</h2>
                 <a href="${pageContext.request.contextPath}/project/create" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-circle me-1"></i> Add New Project
+                    <i class="bi bi-plus-circle me-1"></i> New Project
                 </a>
             </div>
             <div class="card-body">
                 <c:if test="${empty projects}">
-                    <div class="text-center py-5">
-                        <i class="bi bi-folder-x display-4 text-muted mb-3"></i>
-                        <p class="text-muted">No projects found. Start by creating a new project.</p>
-                    </div>
+                    <p class="text-center text-muted my-4">No projects found.</p>
                 </c:if>
-                
                 <c:if test="${not empty projects}">
-                    <div class="row">
-                        <c:forEach var="project" items="${projects}">
-                            <div class="col-md-4 mb-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title">${project.name}</h5>
-                                        <p class="card-text text-muted small mb-3">${project.description}</p>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                <fmt:formatDate value="${project.startDate}" pattern="MMM dd, yyyy" />
-                                            </small>
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="${pageContext.request.contextPath}/project/view/${project.id}" class="btn btn-outline-primary">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a href="${pageContext.request.contextPath}/project/edit/${project.id}" class="btn btn-outline-secondary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Tasks</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach items="${projects}" var="project">
+                                    <tr>
+                                        <td>
+                                            <h6 class="mb-0">${project.name}</h6>
+                                            <small class="text-muted">${project.description}</small>
+                                        </td>
+                                        <td>${project.taskCount}</td>
+                                        <td>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: ${project.progress}%;" 
+                                                     aria-valuenow="${project.progress}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </c:forEach>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="${pageContext.request.contextPath}/project/view/${project.id}" 
+                                                   class="btn btn-outline-primary">View</a>
+                                                <a href="${pageContext.request.contextPath}/project/edit/${project.id}" 
+                                                   class="btn btn-outline-secondary">Edit</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
                     </div>
                 </c:if>
-            </div>
-            <div class="card-footer bg-white border-top-0 text-end">
-                <a href="${pageContext.request.contextPath}/projects" class="btn btn-outline-primary btn-sm">
-                    View All Projects
-                </a>
             </div>
         </div>
     </c:if>
