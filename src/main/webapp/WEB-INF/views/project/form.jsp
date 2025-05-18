@@ -14,13 +14,13 @@
     
     <div class="card">
         <div class="card-body">
-            <c:if test="${sessionScope.user.role ne 'ADMIN'}">
+            <c:if test="${sessionScope.user.role ne 'admin'}">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>Only administrators can create or edit projects.
                 </div>
             </c:if>
             
-            <c:if test="${sessionScope.user.role eq 'ADMIN'}">
+            <c:if test="${sessionScope.user.role eq 'admin'}">
                 <form action="${pageContext.request.contextPath}/project" method="post" class="needs-validation" novalidate>
                     <input type="hidden" name="action" value="${empty project.id ? 'create' : 'update'}">
                     <c:if test="${not empty project.id}">

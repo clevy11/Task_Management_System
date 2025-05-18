@@ -48,7 +48,7 @@ public class ProjectServlet extends HttpServlet {
         }
         
         // Check if user is admin
-        if (!"ADMIN".equals(currentUser.getRole())) {
+        if (!"admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -86,7 +86,7 @@ public class ProjectServlet extends HttpServlet {
         }
         
         // Check if user is admin
-        if (!"ADMIN".equals(currentUser.getRole())) {
+        if (!"admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }

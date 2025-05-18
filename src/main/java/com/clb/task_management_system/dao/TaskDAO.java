@@ -191,16 +191,46 @@ public class TaskDAO {
     }
     
     public boolean deleteTask(int taskId) {
-        String query = "DELETE FROM TASKS WHERE id = ?";
-        
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+        Connection conn = null;
+        try {
+            conn = DatabaseUtil.getConnection();
+            conn.setAutoCommit(false);
             
-            stmt.setInt(1, taskId);
-            return stmt.executeUpdate() > 0;
+            // First delete related task logs to avoid foreign key constraint violation
+            String deleteLogsQuery = "DELETE FROM task_logs WHERE task_id = ?";
+            try (PreparedStatement logStmt = conn.prepareStatement(deleteLogsQuery)) {
+                logStmt.setInt(1, taskId);
+                logStmt.executeUpdate();
+            }
+            
+            // Then delete the task
+            String deleteTaskQuery = "DELETE FROM tasks WHERE id = ?";
+            try (PreparedStatement taskStmt = conn.prepareStatement(deleteTaskQuery)) {
+                taskStmt.setInt(1, taskId);
+                int result = taskStmt.executeUpdate();
+                
+                conn.commit();
+                return result > 0;
+            }
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
             e.printStackTrace();
             return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException closeEx) {
+                    closeEx.printStackTrace();
+                }
+            }
         }
     }
     

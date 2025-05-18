@@ -18,6 +18,16 @@
                         </div>
                     </c:if>
                     
+                    <c:if test="${not empty errors}">
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                <c:forEach items="${errors}" var="error">
+                                    <li>${error.value}</li>
+                                </c:forEach>
+                            </ul>
+                        </div>
+                    </c:if>
+                    
                     <div class="mb-4">
                         <h5>Task Details</h5>
                         <p class="mb-1"><strong>Title:</strong> ${task.title}</p>
@@ -29,13 +39,12 @@
                     
                     <form action="${pageContext.request.contextPath}/task/status/${task.id}" method="post">
                         <div class="mb-3">
-                            <label for="newStatus" class="form-label">New Status</label>
-                            <select class="form-select" id="newStatus" name="newStatus" required>
+                            <label for="status" class="form-label">New Status</label>
+                            <select class="form-select" id="status" name="status" required>
                                 <option value="">Select Status</option>
-                                <option value="TODO" ${task.status == 'TODO' ? 'selected' : ''}>To Do</option>
-                                <option value="IN_PROGRESS" ${task.status == 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
-                                <option value="REVIEW" ${task.status == 'REVIEW' ? 'selected' : ''}>Review</option>
-                                <option value="DONE" ${task.status == 'DONE' ? 'selected' : ''}>Done</option>
+                                <option value="Pending" ${task.status == 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="In Progress" ${task.status == 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Completed" ${task.status == 'Completed' ? 'selected' : ''}>Completed</option>
                             </select>
                         </div>
                         

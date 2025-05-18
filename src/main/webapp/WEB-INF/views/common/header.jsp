@@ -53,7 +53,7 @@
                                 <i class="bi bi-list-check me-1"></i> Tasks
                             </a>
                         </li>
-                        <c:if test="${sessionScope.user.role eq 'ADMIN'}">
+                        <c:if test="${'admin' eq sessionScope.user.role}">
                             <li class="nav-item">
                                 <a class="nav-link" href="${pageContext.request.contextPath}/project">
                                     <i class="bi bi-folder me-1"></i> Projects
