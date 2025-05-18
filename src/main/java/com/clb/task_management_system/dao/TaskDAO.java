@@ -38,7 +38,7 @@ public class TaskDAO {
     
     public List<Task> getAllTasks() {
         List<Task> tasks = new ArrayList<>();
-        String query = "SELECT * FROM TASKS ORDER BY due_date";
+        String query = "SELECT * FROM TASKS ORDER BY created_at DESC";
         
         try (Connection conn = DatabaseUtil.getConnection();
              Statement stmt = conn.createStatement();
@@ -58,7 +58,7 @@ public class TaskDAO {
     
     public List<Task> getTasksByAssignee(int assigneeId) {
         List<Task> tasks = new ArrayList<>();
-        String query = "SELECT * FROM TASKS WHERE assigned_to = ? ORDER BY due_date";
+        String query = "SELECT * FROM TASKS WHERE assigned_to = ? ORDER BY created_at DESC";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -81,7 +81,7 @@ public class TaskDAO {
     
     public List<Task> getTasksByCreator(int creatorId) {
         List<Task> tasks = new ArrayList<>();
-        String query = "SELECT * FROM TASKS WHERE created_by = ? ORDER BY due_date";
+        String query = "SELECT * FROM TASKS WHERE created_by = ? ORDER BY created_at DESC";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -104,7 +104,7 @@ public class TaskDAO {
     
     public List<Task> getTasksByProject(int projectId) {
         List<Task> tasks = new ArrayList<>();
-        String query = "SELECT * FROM TASKS WHERE project_id = ? ORDER BY due_date";
+        String query = "SELECT * FROM TASKS WHERE project_id = ? ORDER BY created_at DESC";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -125,32 +125,9 @@ public class TaskDAO {
         return tasks;
     }
     
-    public List<Task> getTasksByStatus(String status) {
-        List<Task> tasks = new ArrayList<>();
-        String query = "SELECT * FROM TASKS WHERE status = ? ORDER BY due_date";
-        
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            
-            stmt.setString(1, status);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Task task = mapResultSetToTask(rs);
-                    loadRelatedEntities(task);
-                    tasks.add(task);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return tasks;
-    }
-    
-    public boolean createTask(Task task) {
-        String query = "INSERT INTO TASKS (title, description, due_date, status, assigned_to, project_id, created_by) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+    public int createTask(Task task) {
+        String query = "INSERT INTO TASKS (title, description, due_date, status, assigned_to, project_id, created_by, created_at, updated_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
@@ -174,8 +151,7 @@ public class TaskDAO {
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        task.setId(generatedKeys.getInt(1));
-                        return true;
+                        return generatedKeys.getInt(1);
                     }
                 }
             }
@@ -183,7 +159,7 @@ public class TaskDAO {
             e.printStackTrace();
         }
         
-        return false;
+        return -1;
     }
     
     public boolean updateTask(Task task) {
@@ -210,102 +186,48 @@ public class TaskDAO {
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
-    public boolean updateTaskStatus(int taskId, String newStatus, int changedBy) {
-        Connection conn = null;
-        try {
-            conn = DatabaseUtil.getConnection();
-            conn.setAutoCommit(false);
-            
-            // Get current task
-            String taskQuery = "SELECT * FROM TASKS WHERE id = ?";
-            String oldStatus = null;
-            
-            try (PreparedStatement taskStmt = conn.prepareStatement(taskQuery)) {
-                taskStmt.setInt(1, taskId);
-                
-                try (ResultSet rs = taskStmt.executeQuery()) {
-                    if (rs.next()) {
-                        oldStatus = rs.getString("status");
-                    } else {
-                        // Task not found
-                        conn.rollback();
-                        return false;
-                    }
-                }
-            }
-            
-            // Update task status
-            String updateQuery = "UPDATE TASKS SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-            try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
-                updateStmt.setString(1, newStatus);
-                updateStmt.setInt(2, taskId);
-                
-                int affectedRows = updateStmt.executeUpdate();
-                if (affectedRows == 0) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            // Create task log
-            String logQuery = "INSERT INTO TASK_LOGS (task_id, old_status, new_status, changed_by) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement logStmt = conn.prepareStatement(logQuery)) {
-                logStmt.setInt(1, taskId);
-                logStmt.setString(2, oldStatus);
-                logStmt.setString(3, newStatus);
-                logStmt.setInt(4, changedBy);
-                
-                int affectedRows = logStmt.executeUpdate();
-                if (affectedRows == 0) {
-                    conn.rollback();
-                    return false;
-                }
-            }
-            
-            conn.commit();
-            return true;
-            
-        } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            e.printStackTrace();
             return false;
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
     }
     
-    public boolean deleteTask(int id) {
+    public boolean deleteTask(int taskId) {
         String query = "DELETE FROM TASKS WHERE id = ?";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setInt(1, id);
-            
+            stmt.setInt(1, taskId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
+    }
+    
+    public void loadRelatedEntities(Task task) {
+        if (task == null) return;
         
-        return false;
+        try {
+            // Load assignee
+            if (task.getAssignedTo() > 0) {
+                User assignee = userDAO.getUserById(task.getAssignedTo());
+                task.setAssignee(assignee);
+            }
+            
+            // Load creator
+            if (task.getCreatedBy() > 0) {
+                User creator = userDAO.getUserById(task.getCreatedBy());
+                task.setCreator(creator);
+            }
+            
+            // Load project
+            if (task.getProjectId() > 0) {
+                Project project = projectDAO.getProjectById(task.getProjectId());
+                task.setProject(project);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     private Task mapResultSetToTask(ResultSet rs) throws SQLException {
@@ -321,31 +243,5 @@ public class TaskDAO {
         task.setCreatedAt(rs.getTimestamp("created_at"));
         task.setUpdatedAt(rs.getTimestamp("updated_at"));
         return task;
-    }
-    
-    private void loadRelatedEntities(Task task) throws SQLException {
-        // Load assignee if assigned
-        if (task.getAssignedTo() > 0) {
-            User assignee = userDAO.getUserById(task.getAssignedTo());
-            if (assignee != null) {
-                task.setAssignee(assignee);
-            }
-        }
-        
-        // Load creator
-        if (task.getCreatedBy() > 0) {
-            User creator = userDAO.getUserById(task.getCreatedBy());
-            if (creator != null) {
-                task.setCreator(creator);
-            }
-        }
-        
-        // Load project if available
-        if (task.getProjectId() > 0) {
-            Project project = projectDAO.getProjectById(task.getProjectId());
-            if (project != null) {
-                task.setProject(project);
-            }
-        }
     }
 }

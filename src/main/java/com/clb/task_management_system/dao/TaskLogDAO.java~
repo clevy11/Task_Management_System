@@ -72,7 +72,12 @@ public class TaskLogDAO {
         return false;
     }
     
-
+    /**
+     * Deletes all logs associated with a specific task.
+     * 
+     * @param taskId The ID of the task whose logs should be deleted
+     * @return true if the deletion was successful, false otherwise
+     */
     public boolean deleteLogsByTaskId(int taskId) {
         String query = "DELETE FROM TASK_LOGS WHERE task_id = ?";
         

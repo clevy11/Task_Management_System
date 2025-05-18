@@ -3,4 +3,43 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
+    
+    <display-name>Task Management System</display-name>
+    
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+    
+
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>com.clb.task_management_system.filter.AuthFilter</filter-class>
+    </filter>
+    
+    <!-- Filter Mappings -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/dashboard</url-pattern>
+        <url-pattern>/tasks</url-pattern>
+        <url-pattern>/task/*</url-pattern>
+        <url-pattern>/projects</url-pattern>
+        <url-pattern>/project/*</url-pattern>
+    </filter-mapping>
+    
+    <!-- Error Pages -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/views/404.jsp</location>
+    </error-page>
+    
+    <error-page>
+        <exception-type>java.lang.Throwable</exception-type>
+        <location>/WEB-INF/views/error.jsp</location>
+    </error-page>
+    
+    <!-- Session Configuration -->
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
 </web-app>
